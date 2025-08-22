@@ -9,6 +9,7 @@ use App\Http\Resources\Task\TaskResource;
 use App\Http\Resources\Task\TaskCollection;
 use App\Http\Requests\Task\TaskStoreRequest;
 use App\Http\Requests\Task\TaskUpdateRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class TaskController extends Controller
@@ -17,7 +18,7 @@ class TaskController extends Controller
         private TaskService $service
     ) {}
 
-    public function index(): TaskCollection
+    public function index(): TaskCollection|null
     {
         $tasks = $this->service->getAllTasks();
         return new TaskCollection($tasks);
@@ -32,10 +33,16 @@ class TaskController extends Controller
         return new TaskResource($task);
     }
 
-    public function show($id): TaskResource
+    public function show($id): TaskResource|JsonResponse
     {
-        $task = $this->service->getTaskById($id);
-        return new TaskResource($task);
+        try {
+            $task = $this->service->getTaskByUser($id, $id);
+            return new TaskResource($task);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Task not found',
+            ], 404);
+        }
     }
 
     public function usersTasks(int $userId): TaskCollection{
